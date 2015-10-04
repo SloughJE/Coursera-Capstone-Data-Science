@@ -1,0 +1,453 @@
+  
+---
+title: 'Coursera Capstone: Exploratory Data Analysis'
+author: "John Slough II"
+date: "12 October 2015"
+output:
+  html_document: default
+  pdf_document:
+    keep_tex: yes
+header-includes: \usepackage{graphicx}
+graphics: yes
+---
+
+## **Introduction**
+
+This project in concerned with predicting the next word of text input. We were given three datasets from which to build the prediction: Tweets, Blogs and News. Each file contains  text from tweets, blogs and news reports. This report serves as an exploratory analysis of the data and a progress report. 
+
+## **The Data** 
+
+
+
+```{r,eval=TRUE,echo=FALSE,message=FALSE}
+
+setwd("~/Desktop/Courses/Coursera/Data Science Specialization/Capstone/DataSets/final/en_US")
+library(ggplot2)
+library(quanteda)
+library(gridExtra)
+library(grid)
+library(knitr)
+```
+
+The following table shows the size of each file, the number of lines, and the number of words. Because the files are very large, we will take a 5% random sample of each of them for faster processing in this exploration.
+
+```{r,echo=FALSE,eval=TRUE}
+
+# for tweets
+setwd("~/Desktop/Courses/Coursera/Data Science Specialization/Capstone/DataSets/final/en_US")
+
+
+# file <- 'en_US.twitter.txt'
+# twitter = readLines(file, file.info(file)$size)
+# saveRDS(twitter, "twitter.rds")
+# file <- 'en_US.blogs.txt'
+# blogs = readLines(file, file.info(file)$size)
+# saveRDS(blogs, "blogs.rds")
+# file <- 'en_US.news.txt'
+# news = readLines(file, file.info(file)$size)
+# saveRDS(news, "news.rds")
+
+
+TwitterRDS = readRDS("twitter.rds")
+size_T=file.info("twitter.rds")$size/1024^2
+lines_T=length(TwitterRDS)
+n_wordsT=sum(ntoken(TwitterRDS))
+
+blogsRDS = readRDS("blogs.rds")
+size_B=file.info("blogs.rds")$size/1024^2
+lines_B=length(blogsRDS)
+n_wordsB=sum(ntoken(blogsRDS))
+
+newsRDS = readRDS("news.rds")
+size_N=file.info("news.rds")$size/1024^2
+lines_N=length(newsRDS)
+n_wordsN=sum(ntoken(newsRDS))
+
+files=c("twitter","blogs","news")
+lines=c(lines_T,lines_B,lines_N)
+words=c(n_wordsT,n_wordsB,n_wordsN)
+size=c(size_T,size_B,size_N)
+
+twit_sum=data.frame(files,size,lines,words)
+colnames(twit_sum) = c("file","size on disk (MB)","number of lines","number of words")
+
+kable(twit_sum)
+
+```
+
+```{r,echo=FALSE,eval=FALSE}
+
+# for tweets
+setwd("~/Desktop/Courses/Coursera/Data Science Specialization/Capstone/DataSets/final/en_US")
+
+TwitterRDS <- unlist(TwitterRDS)
+Encoding(TwitterRDS)  <- "UTF-8"
+
+TwitRDS_A <- sample(TwitterRDS, size=nlines*0.05, replace=FALSE)
+sum(nchar(TwitRDS_A))
+length(TwitRDS_A)
+
+UNIgramT=dfm(TwitRDS_A, ngrams = 1,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+
+BIgramT=dfm(TwitRDS_A, ngrams = 2,verbose = TRUE, toLower = TRUE,
+           removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+           removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+           keptFeatures = NULL)
+
+TRIgramT=dfm(TwitRDS_A, ngrams = 3,verbose = TRUE, toLower = TRUE,
+           removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+           removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+           keptFeatures = NULL)
+
+UNItopT = topfeatures(UNIgramT, 30)#####
+UNItopTDF=data.frame(UNItopT)
+UNItopTDF$ngrams <- rownames(UNItopTDF) 
+
+
+BItopT = topfeatures(BIgramT, 30)#####
+BItopTDF=data.frame(BItopT)
+BItopTDF$ngrams <- rownames(BItopTDF) 
+BItopTDF$ngrams <- gsub('_', ' ', BItopTDF$ngrams)
+
+
+TRItopT = topfeatures(TRIgramT, 30)#####
+TRItopTDF=data.frame(TRItopT)
+TRItopTDF$ngrams <- rownames(TRItopTDF) 
+TRItopTDF$ngrams <- gsub('_', ' ', TRItopTDF$ngrams)
+
+# write.csv(UNItopTDF, "UniSampTweets.csv",row.names = FALSE)
+# write.csv(BItopTDF, "BiSampTweets.csv",row.names = FALSE)
+# write.csv(TRItopTDF, "TriSampTweets.csv",row.names = FALSE)
+
+### now for blogs
+# file <- 'en_US.blogs.txt'
+# blogs = readLines(file, file.info(file)$size)
+# saveRDS(blogs, "blogs.rds")
+
+
+blogsRDS <- unlist(blogsRDS)
+Encoding(blogsRDS)  <- "UTF-8"
+
+blogsRDS_A <- sample(blogsRDS, size=nlines*0.05, replace=FALSE)
+sum(nchar(blogsRDS_A))
+length(blogsRDS_A)
+
+
+
+UNIgramB=dfm(blogsRDS_A, ngrams = 1,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+BIgramB=dfm(blogsRDS_A, ngrams = 2,verbose = TRUE, toLower = TRUE,
+           removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+           removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+           keptFeatures = NULL)
+
+TRIgramB=dfm(blogsRDS_A, ngrams = 3,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+UNItopB = topfeatures(UNIgramB, 30)#####
+UNItopBDF=data.frame(UNItopB)
+UNItopBDF$ngrams <- rownames(UNItopBDF) 
+
+BItopB = topfeatures(BIgramB, 30)#####
+BItopBDF=data.frame(BItopB)
+BItopBDF$ngrams <- rownames(BItopBDF) 
+BItopBDF$ngrams <- gsub('_', ' ', BItopBDF$ngrams)
+
+TRItopB = topfeatures(TRIgramB, 30)#####
+TRItopBDF=data.frame(TRItopB)
+TRItopBDF$ngrams <- rownames(TRItopBDF) 
+TRItopBDF$ngrams <- gsub('_', ' ', TRItopBDF$ngrams)
+
+# write.csv(UNItopBDF, "UniSampBlogs.csv",row.names = FALSE)
+# write.csv(BItopBDF, "BiSampBlogs.csv",row.names = FALSE)
+# write.csv(TRItopBDF, "TriSampBlogs.csv",row.names = FALSE)
+
+### now for news
+# file <- 'en_US.news.txt'
+# news = readLines(file, file.info(file)$size)
+# saveRDS(news, "news.rds")
+
+
+newsRDS = readRDS("news.rds")
+nlines=length(newsRDS)
+newsRDS <- unlist(newsRDS)
+Encoding(newsRDS)  <- "UTF-8"
+
+newsRDS_A <- sample(newsRDS, size=nlines*0.05, replace=FALSE)
+sum(nchar(newsRDS_A))
+length(newsRDS_A)
+
+UNIgramN=dfm(newsRDS_A, ngrams = 1,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+BIgramN=dfm(newsRDS_A, ngrams = 2,verbose = TRUE, toLower = TRUE,
+           removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+           removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+           keptFeatures = NULL)
+
+TRIgramN=dfm(newsRDS_A, ngrams = 3,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+
+UNItopN = topfeatures(UNIgramN, 30)#####
+UNItopNDF=data.frame(UNItopN)
+UNItopNDF$ngrams <- rownames(UNItopNDF) 
+
+BItopN = topfeatures(BIgramN, 30)#####
+BItopNDF=data.frame(BItopN)
+BItopNDF$ngrams <- rownames(BItopNDF) 
+BItopNDF$ngrams <- gsub('_', ' ', BItopNDF$ngrams)
+
+TRItopN = topfeatures(TRIgramN, 30)#####
+TRItopNDF=data.frame(TRItopN)
+TRItopNDF$ngrams <- rownames(TRItopNDF) 
+TRItopNDF$ngrams <- gsub('_', ' ', TRItopNDF$ngrams)
+
+# write.csv(UNItopNDF, "UniSampNews.csv",row.names = FALSE)
+# write.csv(BItopNDF, "BiSampNews.csv",row.names = FALSE)
+# write.csv(TRItopNDF, "TriSampNews.csv",row.names = FALSE)
+```
+
+### **Individual Datasets**
+
+I used the package "quanteda" to extract the n-grams from the files. Each file was assessed separately, then they were combined. The plots below show the frequency of n-grams in each dataset. Note the similarities of the n-grams between the blogs and news datasets and the differences between the twitter dataset and the blogs and news datasets. The twitter n-grams seem more conversational.
+
+```{r,echo=FALSE}
+setwd("~/Desktop/Courses/Coursera/Data Science Specialization/Capstone/DataSets/final/en_US")
+
+UNItopSortTweet=read.csv("UniSampTweets.csv")
+BItopSortTweet=read.csv("BiSampTweets.csv")
+TRItopSortTweet=read.csv("TriSampTweets.csv")
+
+UNItopSortTweet = transform(UNItopSortTweet,ngrams = reorder(ngrams, -UNItopT))
+BItopSortTweet = transform(BItopSortTweet,ngrams = reorder(ngrams, -BItopT))
+TRItopSortTweet = transform(TRItopSortTweet,ngrams = reorder(ngrams, -TRItopT))
+
+UNItopSortTweet = UNItopSortTweet[1:20,]
+BItopSortTweet = BItopSortTweet[1:20,]
+TRItopSortTweet = TRItopSortTweet[1:20,]
+
+UNItopSortBlogs=read.csv("UniSampBlogs.csv")
+BItopSortBlogs=read.csv("BiSampBlogs.csv")
+TRItopSortBlogs=read.csv("TriSampBlogs.csv")
+
+UNItopSortBlogs = transform(UNItopSortBlogs,ngrams = reorder(ngrams, -UNItopB))
+BItopSortBlogs = transform(BItopSortBlogs,ngrams = reorder(ngrams, -BItopB))
+TRItopSortBlogs = transform(TRItopSortBlogs,ngrams = reorder(ngrams, -TRItopB))
+
+UNItopSortBlogs = UNItopSortBlogs[1:20,]
+BItopSortBlogs = BItopSortBlogs[1:20,]
+TRItopSortBlogs = TRItopSortBlogs[1:20,]
+
+UNItopSortNews=read.csv("UniSampNews.csv")
+BItopSortNews=read.csv("BiSampNews.csv")
+TRItopSortNews=read.csv("TriSampNews.csv")
+
+UNItopSortNews = transform(UNItopSortNews,ngrams = reorder(ngrams, -UNItopN))
+BItopSortNews = transform(BItopSortNews,ngrams = reorder(ngrams, -BItopN))
+TRItopSortNews = transform(TRItopSortNews,ngrams = reorder(ngrams, -TRItopN))
+
+UNItopSortNews = UNItopSortNews[1:20,]
+BItopSortNews = BItopSortNews[1:20,]
+TRItopSortNews = TRItopSortNews[1:20,]
+
+
+```
+
+
+
+```{r,fig.width=14, fig.height=11,center=TRUE,fig.align='center',echo=FALSE}
+# twitter
+
+UNItwit = ggplot(UNItopSortTweet, aes(x=ngrams,y=UNItopT)) +xlab("") + ylab("frequency")
+UNItwit = UNItwit + geom_bar(stat="Identity", fill="indianred1") +ggtitle("uni-gram")
+UNItwit = UNItwit + theme_light() + theme(plot.margin=unit(c(.25,0,0.85,-0.05), "cm"))
+UNItwit = UNItwit + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+UNItwit = UNItwit + scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,50000, by=10000),expand = c(0,0))
+
+BItwit = ggplot(BItopSortTweet, aes(x=ngrams,y=BItopT)) +xlab("")+ ylab("")
+BItwit = BItwit +  geom_bar(stat="Identity", fill="indianred2") +ggtitle("bi-gram")
+BItwit = BItwit + theme_light()+ theme(plot.margin=unit(c(.25,0, .3,-0.05), "cm"))
+BItwit = BItwit + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+BItwit = BItwit +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,4000, by=500),expand = c(0,0))
+
+TRItwit = ggplot(TRItopSortTweet, aes(x=ngrams,y=TRItopT)) +xlab("")+ ylab("")
+TRItwit = TRItwit +  geom_bar(stat="Identity", fill="indianred3") +ggtitle("tri-gram")
+TRItwit = TRItwit + theme_light() + theme(plot.margin=unit(c(.25,.5,-.57,-0.2), "cm"))
+TRItwit = TRItwit + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+TRItwit = TRItwit +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,1200, by=250),expand = c(0,0))
+
+
+# blogs
+
+UNIblog = ggplot(UNItopSortBlogs, aes(x=ngrams,y=UNItopB)) +xlab("") + ylab("frequency")
+UNIblog = UNIblog + geom_bar(stat="Identity", fill="skyblue1") 
+UNIblog = UNIblog + theme_light()  + theme(plot.margin=unit(c(.25,0,.8,0), "cm"))
+UNIblog = UNIblog + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+UNIblog = UNIblog + scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,100000, by = 10000),expand = c(0,0))
+
+BIblog = ggplot(BItopSortBlogs, aes(x=ngrams,y=BItopB)) +xlab("")+ ylab("")
+BIblog = BIblog +  geom_bar(stat="Identity", fill="skyblue2") 
+BIblog = BIblog + theme_light() + theme(plot.margin=unit(c(.25,0,0.45,0), "cm"))
+BIblog = BIblog + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+BIblog = BIblog +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,10000, by=1000),expand = c(0,0))
+
+TRIblog = ggplot(TRItopSortBlogs, aes(x=ngrams,y=TRItopB)) +xlab("")+ ylab("")
+TRIblog = TRIblog +  geom_bar(stat="Identity", fill="skyblue3") 
+TRIblog = TRIblog + theme_light() + theme(plot.margin=unit(c(.25,0.5,0,0), "cm"))
+TRIblog = TRIblog + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+TRIblog = TRIblog +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,800, by=100),expand = c(0,0))
+
+# news
+
+
+UNInews = ggplot(UNItopSortNews, aes(x=ngrams,y=UNItopN)) +xlab("") + ylab("frequency")
+UNInews = UNInews + geom_bar(stat="Identity", fill="seagreen2") 
+UNInews = UNInews + theme_light() + theme(plot.margin=unit(c(.25,0,1.3,0), "cm"))
+UNInews = UNInews + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+UNInews = UNInews + scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,100000, by = 10000),expand = c(0,0))
+
+BInews = ggplot(BItopSortNews, aes(x=ngrams,y=BItopN)) +xlab("")+ ylab("")
+BInews = BInews +  geom_bar(stat="Identity", fill="seagreen3") 
+BInews = BInews + theme_light() + theme(plot.margin=unit(c(.25,0,0.85,0), "cm"))
+BInews = BInews + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+BInews = BInews +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,10000, by=1000),expand = c(0,0))
+
+TRInews = ggplot(TRItopSortNews, aes(x=ngrams,y=TRItopN)) +xlab("")+ ylab("")
+TRInews = TRInews +  geom_bar(stat="Identity", fill="seagreen4") 
+TRInews = TRInews + theme_light() + theme(plot.margin=unit(c(.25,0.5,0,0), "cm"))
+TRInews = TRInews + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+TRInews = TRInews +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,800, by=100),expand = c(0,0))
+
+
+barCharts1=arrangeGrob(UNItwit, BItwit, TRItwit, UNIblog, BIblog, TRIblog, UNInews, BInews, TRInews,
+nrow = 3, ncol = 3,left=textGrob(c("Tweets","Blogs","News"),y = c(.86,.54,.215) ,gp = gpar(fontsize=c(18,18,18), face = c("bold","bold","bold"),col=c("indianred3","skyblue3","seagreen4"))))
+
+grid1=grid.draw(barCharts1)
+
+```
+
+
+
+### **Combined Datasets**
+
+The next chart shows all of the datasets combined. The blogs and news datasets dominate the most frequent n-grams. 
+
+```{r, echo=FALSE,eval=FALSE}
+
+NewsRDS = readRDS("News.rds")
+NewsRDS_A <- unlist(NewsRDS)
+Encoding(newsRDS_A)  <- "UTF-8"
+BlogsRDS = readRDS("Blogs.rds")
+BlogsRDS_A <- unlist(BlogsRDS)
+Encoding(BlogsRDS_A)  <- "UTF-8"
+TwitterRDS = readRDS("Twitter.rds")
+TwitRDS_A <- unlist(TwitterRDS)
+Encoding(TwitRDS_A)  <- "UTF-8"
+
+
+ALL = c(newsRDS_A,blogsRDS_A,TwitRDS_A)
+sum(nchar(ALL))
+length(ALL)
+
+ALLsamp <- sample(ALL, size=nlines*0.05, replace=FALSE)
+sum(nchar(ALLsamp))
+length(ALLsamp)
+
+UNIgram=dfm(ALLsamp, ngrams = 1,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+BIgram=dfm(ALLsamp, ngrams = 2,verbose = TRUE, toLower = TRUE,
+           removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+           removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+           keptFeatures = NULL)
+
+TRIgram=dfm(ALLsamp, ngrams = 3,verbose = TRUE, toLower = TRUE,
+            removeNumbers = TRUE, removePunct = TRUE, removeSeparators = TRUE,
+            removeTwitter = TRUE, stem = FALSE, ignoredFeatures = NULL,
+            keptFeatures = NULL)
+
+UNItop = topfeatures(UNIgram, 30)#####
+UNItopDF=data.frame(UNItop)
+UNItopDF$ngrams <- rownames(UNItopDF) 
+
+BItop = topfeatures(BIgram, 30)#####
+BItopDF=data.frame(BItop)
+BItopDF$ngrams <- rownames(BItopDF) 
+BItopDF$ngrams <- gsub('_', ' ', BItopDF$ngrams)
+
+TRItop = topfeatures(TRIgram, 30)#####
+TRItopDF=data.frame(TRItop)
+TRItopDF$ngrams <- rownames(TRItopDF) 
+TRItopDF$ngrams <- gsub('_', ' ', TRItopDF$ngrams)
+
+
+# write.csv(UNItopDF, "UniSampAll.csv",row.names = FALSE)
+# write.csv(BItopDF, "BiSampAll.csv",row.names = FALSE)
+# write.csv(TRItopDF, "TriSampAll.csv",row.names = FALSE)
+
+```
+
+```{r,echo=FALSE,eval=TRUE,fig.width=14, fig.height=6,center=TRUE,fig.align='center'}
+setwd("~/Desktop/Courses/Coursera/Data Science Specialization/Capstone/DataSets/final/en_US")
+
+UNItopSortAll=read.csv("UniSampAll.csv")
+BItopSortAll=read.csv("BiSampAll.csv")
+TRItopSortAll=read.csv("TriSampAll.csv")
+
+UNItopSortAll = UNItopSortAll[1:20,]
+BItopSortAll = BItopSortAll[1:20,]
+TRItopSortAll = TRItopSortAll[1:20,]
+
+UNItopSortAll = transform(UNItopSortAll,ngrams = reorder(ngrams, -UNItop))
+BItopSortAll = transform(BItopSortAll,ngrams = reorder(ngrams, -BItop))
+TRItopSortAll = transform(TRItopSortAll,ngrams = reorder(ngrams, -TRItop))
+
+
+UNIall = ggplot(UNItopSortAll, aes(x=ngrams,y=UNItop)) +xlab("") + ylab("Frequency")
+UNIall = UNIall + geom_bar(stat="Identity", fill="mediumorchid2") + ggtitle("Uni-gram")
+UNIall = UNIall + theme_light() + theme(plot.margin=unit(c(.25,0,1.3,0), "cm"))
+UNIall = UNIall + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+UNIall = UNIall + scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,60000, by = 10000),expand = c(0,0))
+
+
+BIall = ggplot(BItopSortAll, aes(x=ngrams,y=BItop)) +xlab("")+ ylab("")
+BIall = BIall +  geom_bar(stat="Identity", fill="mediumorchid3") + ggtitle("Bi-gram")
+BIall = BIall + theme_light() + theme(plot.margin=unit(c(.25,0,0.85,0), "cm"))
+BIall = BIall + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+BIall = BIall +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,5500, by=1000),expand = c(0,0))
+
+
+TRIall = ggplot(TRItopSortAll, aes(x=ngrams,y=TRItop)) +xlab("")+ ylab("")
+TRIall = TRIall +  geom_bar(stat="Identity", fill="mediumorchid4") + ggtitle("Tri-gram")
+TRIall = TRIall + theme_light() + theme(plot.margin=unit(c(.25,0.5,0,0), "cm"))
+TRIall = TRIall + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+TRIall = TRIall +scale_x_discrete(expand = c(0,0))+scale_y_continuous(breaks = seq(0,450, by=100),expand = c(0,0))
+
+barCharts=arrangeGrob(UNIall, BIall,TRIall,nrow = 1, ncol = 3,
+  left=textGrob("Combined",y = 0.6 ,gp = gpar(fontsize=18, face = "bold", col="mediumorchid4")))
+
+grid=grid.draw(barCharts)
+
+```
+
+### **Next Steps**
+
+The next step in the project is to begin the building of the algorithm for the prediction of the next word. I envision a simple algorithm, which takes as the input *n* words, and then searchers the dataset for the n+1-gram which contains the input word(s). Then the final word of the matched n-gram is suggested for the prediction. 
+
+
